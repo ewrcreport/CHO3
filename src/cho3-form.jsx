@@ -941,7 +941,7 @@ fetch(API + "?action=subdistrict"),
   };
 
   const REQUIRED_FIELDS_BY_STEP = {
-  1: ["office", "area", "setName", "date", "time"],
+  1: ["office", "area", "date", "time"],
   3: ["activityId"],
   6: ["hasDamage"],
   7: ["recorderFirst", "recorderLast", "recorderPos", "recorderOrg", "recorderPhone"],
