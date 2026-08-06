@@ -1399,7 +1399,7 @@ async function submitReport() {
                   ))}
                 </datalist>
               </Field>
-              <Field label="ชื่อชุด" required hint="เลือกชุดที่รับผิดชอบรายงานนี้ — ตัวเลือกจะกรองตามพื้นที่อนุรักษ์ที่เลือกไว้ด้านบน">
+              <Field label="ชื่อชุด" hint="เลือกชุดที่รับผิดชอบรายงานนี้ — ตัวเลือกจะกรองตามพื้นที่อนุรักษ์ที่เลือกไว้ด้านบน">
                 <Select
                   value={data.setName}
                   onChange={(e) => set("setName", e.target.value)}
