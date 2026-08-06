@@ -683,6 +683,8 @@ export default function Cho3Form() {
 
 const [offices, setOffices] = useState([]);
 
+const [masterLoading, setMasterLoading] = useState(true);
+
 const [forestAreas, setForestAreas] = useState([]);
 
 const [patrolSets, setPatrolSets] = useState([]);
@@ -770,7 +772,9 @@ const jointSuggest = forestAreas.reduce((result, area) => {
   const compactStepper = rootWidth > 0 && rootWidth < 560; // too tight even for a scroll strip — show current step only
   useEffect(() => {
 
-  async function loadMaster() {
+async function loadMaster() {
+
+    setMasterLoading(true);
 
     try {
 
@@ -858,9 +862,13 @@ fetch(API + "?action=subdistrict"),
       console.log("Subdistrict :", subdistrictData);
       setSubdistricts(subdistrictData);
 
-    } catch (err) {
+} catch (err) {
 
       console.error(err);
+
+    } finally {
+
+      setMasterLoading(false);
 
     }
 
@@ -1349,19 +1357,34 @@ async function submitReport() {
           <section>
             <SectionHeader num={1} title="หน่วยงานที่รายงาน" desc="ระบุสังกัดและช่วงเวลาที่เกิดเหตุ เพื่อใช้อ้างอิงในระบบรายงาน" />
             <Card>
-              <Field label="สำนักบริหารพื้นที่อนุรักษ์" required hint="รายชื่อสำนักในตัวอย่างนี้เว้นไว้บางส่วน สามารถแก้ไขรายการให้ครบตามจริงก่อนใช้งาน">
-                <Select value={data.office} onChange={(e) => { set("office", e.target.value); set("area", ""); }}>
-                  <option value="">— เลือกสำนักบริหารพื้นที่อนุรักษ์ —</option>
-                  {offices.map((o) => (
-  <option
-    key={o.officeId}
-    value={o.officeName}
+<Field
+  label={
+    <>
+      สำนักบริหารพื้นที่อนุรักษ์
+      {masterLoading && (
+        <span
+          className="inline-block w-3.5 h-3.5 rounded-full border-2 align-middle ml-1"
+          style={{ borderColor: "#FAEEDA", borderTopColor: "#B6742A", animation: "spin 0.7s linear infinite" }}
+        />
+      )}
+    </>
+  }
+  required
+  hint={masterLoading ? "กำลังโหลดรายชื่อสำนักจากระบบ กรุณารอสักครู่..." : "รายชื่อสำนักในตัวอย่างนี้เว้นไว้บางส่วน สามารถแก้ไขรายการให้ครบตามจริงก่อนใช้งาน"}
+>
+  <Select
+    value={data.office}
+    disabled={masterLoading}
+    onChange={(e) => { set("office", e.target.value); set("area", ""); }}
+    className={masterLoading ? "opacity-60 cursor-wait" : ""}
   >
-    {o.officeName}
-  </option>
-))}
-                </Select>
-              </Field>
+    <option value="">{masterLoading ? "กำลังโหลดข้อมูล..." : "— เลือกสำนักบริหารพื้นที่อนุรักษ์ —"}</option>
+    {offices.map((o) => (
+      <option key={o.officeId} value={o.officeName}>{o.officeName}</option>
+    ))}
+  </Select>
+</Field>
+<style>{`@keyframes spin{to{transform:rotate(360deg);}}`}</style>
               <Field label="พื้นที่อนุรักษ์" required hint="ตัวเลือกจะกรองตามสำนักบริหารพื้นที่อนุรักษ์ที่เลือกไว้ด้านบน">
                 <TextInput
                   list="areaList"
