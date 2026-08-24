@@ -674,6 +674,7 @@ export default function Cho3Form() {
   const [submitted, setSubmitted] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [submitAttempt, setSubmitAttempt] = useState(0);
   const [stepError, setStepError] = useState(false);
   const [data, setData] = useState(initialData);
 
@@ -1134,50 +1135,71 @@ function buildPayload() {
 
 async function submitReport() {
 
-    const payload = buildPayload();
+  const payload = buildPayload();
+  setSubmitting(true);
 
-    setSubmitting(true);
+  const MAX_ATTEMPTS = 4;
+  const PER_ATTEMPT_TIMEOUT_MS = 90000;
+
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    setSubmitAttempt(attempt);
+
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), PER_ATTEMPT_TIMEOUT_MS);
 
     try {
+      const response = await fetch(API, {
+        method: "POST",
+        body: JSON.stringify(payload),
+        signal: controller.signal
+      });
+      clearTimeout(timer);
 
-        const response = await fetch(API, {
-            method: "POST",
-            body: JSON.stringify(payload)
-        });
+      console.log(response.status);
+      console.log(response.url);
 
-        // const result = await response.json();
+      const text = await response.text();
+      console.log(text);
 
-        console.log(response.status);
-        console.log(response.url);
+      let result;
+      try {
+        result = JSON.parse(text);
+      } catch (parseErr) {
+        throw new Error("ระบบตอบกลับไม่ถูกต้อง (อาจมีผู้ใช้งานพร้อมกันจำนวนมาก)");
+      }
 
-        const text = await response.text();
+      if (result.success) {
+        setShowConfirm(false);
+        setSubmitted(true);
+        setSubmitting(false);
+        setSubmitAttempt(0);
+        return;
+      }
 
-        console.log(text);
-
-        const result = JSON.parse(text);
-
-        if (result.success) {
-
-            setShowConfirm(false);
-            setSubmitted(true);
-
-        } else {
-
-            alert(result.message);
-
-        }
-
-    } catch(err){
-
-        console.error("Fetch Error :", err);
-        alert(err.message);
-
-    } finally {
-    
+      alert(result.message);
       setSubmitting(false);
-  
-    }
+      setSubmitAttempt(0);
+      return;
 
+    } catch (err) {
+      clearTimeout(timer);
+      console.error(`ส่งรายงานพลาด (ครั้งที่ ${attempt}/${MAX_ATTEMPTS}) :`, err);
+
+      if (attempt === MAX_ATTEMPTS) {
+        alert(
+          "ส่งรายงานไม่สำเร็จหลังจากลองหลายครั้ง (อาจมีผู้ใช้งานพร้อมกันจำนวนมาก)\n" +
+          "กรุณาลองกดส่งอีกครั้ง หรือรอสักครู่แล้วลองใหม่\n\n" +
+          err.message
+        );
+        setSubmitting(false);
+        setSubmitAttempt(0);
+        return;
+      }
+
+      const delayMs = 5000 + Math.random() * 5000;
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+    }
+  }
 }
 
   if (submitted) {
@@ -2300,7 +2322,11 @@ async function submitReport() {
           {submitting && (
     <span className="w-3.5 h-3.5 rounded-full border-2 border-white/40 border-t-white" style={{ animation: "spin 0.7s linear infinite" }} />
   )}
-  {submitting ? "กำลังบันทึก..." : "ยืนยัน"}
+  {submitting
+  ? (submitAttempt > 1
+      ? `กำลังลองส่งใหม่ (${submitAttempt}/4)...`
+      : "กำลังบันทึก...")
+  : "ยืนยัน"}
         </button>
         <style>{`@keyframes spin{to{transform:rotate(360deg);}}`}</style>
       </div>
