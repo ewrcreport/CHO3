@@ -2161,7 +2161,7 @@ async function submitReport() {
                           </Field>
                           <Field label="เพศ" basis="150">
                             <Select value={e.gender} onChange={(ev) => patchEntry("elephantDamages", e.id, { gender: ev.target.value })}>
-                              <option>ไม่ทราบ</option><option>เพศผู้</option><option>เพศเมีย</option>
+                              <option>ไม่ทราบ</option><option>ผู้</option><option>เมีย</option>
                             </Select>
                           </Field>
                           <Field label="ชื่อ" basis="160">
