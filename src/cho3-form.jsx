@@ -1176,6 +1176,12 @@ async function submitReport() {
         return;
       }
 
+      // ข้อความนี้แปลว่า "รอคิวนานเกินไป" (คนอื่นกำลังบันทึกอยู่) ไม่ใช่ข้อมูลผิดพลาดจริง
+      // โยนเข้า catch เพื่อให้ retry ต่อ แทนที่จะแจ้ง error ให้ผู้ใช้ทันที
+      if (result.message && result.message.includes("หมดเวลาการล็อก")) {
+        throw new Error(result.message);
+      }
+
       alert(result.message);
       setSubmitting(false);
       setSubmitAttempt(0);
