@@ -122,7 +122,8 @@ const initialData = {
       herdName: "",
       countActual: "",
       countEstimate: "",
-      remark: ""
+      remark: "", 
+      photos: []
       },
   // ช้างที่ระบุตัวได้
     elephants: [],
@@ -1745,6 +1746,13 @@ async function submitReport() {
           </Field>
           <Field label="หมายเหตุ" basis="100%">
             <TextArea placeholder="พฤติกรรม เส้นทาง หรือข้อสังเกตอื่น ๆ" value={data.observation.herd.remark} onChange={(e) => setHerd({ ...data.observation.herd, remark: e.target.value })} />
+          </Field>
+          <Field label="แนบภาพ" basis="100%">
+            <PhotoUploader
+              photos={data.observation.herd.photos}
+              onAdd={(added) => setHerd({ ...data.observation.herd, photos: [...data.observation.herd.photos, ...added] })}
+              onRemove={(photoId) => setHerd({ ...data.observation.herd, photos: data.observation.herd.photos.filter((p) => p.id !== photoId) })}
+            />
           </Field>
         </Row>
       </Card>
