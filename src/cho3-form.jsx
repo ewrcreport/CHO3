@@ -1806,7 +1806,7 @@ async function submitReport() {
 </Field>
                   {!isHerd && (
                     <>
-                      <Field label="อยู่ในฝูงหรือไม่" basis="100%">
+                      <Field label="มีฝูงหรือไม่" basis="100%">
                         <Row gap="0.6rem">
                           <div style={{ flex: "1 1 100px" }}>
                             <Choice checked={!elephant.hasHerd} onChange={() => updateElephant(elephant.id, { hasHerd: false, herdName: "" })}>ไม่มี</Choice>
@@ -1817,7 +1817,7 @@ async function submitReport() {
                         </Row>
                       </Field>
                       {elephant.hasHerd && (
-                        <Field label="ชื่อฝูง" basis="220">
+                        <Field label={<>ชื่อฝูง <InfoTip>ควรระบุให้ชัดเจน หากเว้นว่างไว้ ข้อมูลฝูงของช้างตัวนี้จะไม่สามารถเชื่อมโยงกับฝูงที่เคยรายงานไว้ก่อนหน้าได้</InfoTip></>} basis="220">
                           <TextInput placeholder="เช่น ฝูงแม่ยาย" value={elephant.herdName} onChange={(e) => updateElephant(elephant.id, { herdName: e.target.value })} />
                         </Field>
                       )}
