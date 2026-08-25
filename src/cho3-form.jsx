@@ -1817,7 +1817,7 @@ async function submitReport() {
                         </Row>
                       </Field>
                       {elephant.hasHerd && (
-                        <Field label={<>ชื่อฝูง <InfoTip>ควรระบุให้ชัดเจน หากเว้นว่างไว้ ข้อมูลฝูงของช้างตัวนี้จะไม่สามารถเชื่อมโยงกับฝูงที่เคยรายงานไว้ก่อนหน้าได้</InfoTip></>} basis="220">
+                        <Field label="ชื่อฝูง" info="ควรระบุให้ชัดเจน หากเว้นว่างไว้ ข้อมูลฝูงของช้างตัวนี้จะไม่สามารถเชื่อมโยงกับฝูงที่เคยรายงานไว้ก่อนหน้าได้" basis="220">
                           <TextInput placeholder="เช่น ฝูงแม่ยาย" value={elephant.herdName} onChange={(e) => updateElephant(elephant.id, { herdName: e.target.value })} />
                         </Field>
                       )}
