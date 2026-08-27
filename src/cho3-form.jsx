@@ -1737,7 +1737,7 @@ async function submitReport() {
         <div className="text-sm font-semibold text-stone-900 mb-4">ข้อมูลฝูง</div>
         <Row>
           <Field label="ชื่อฝูง (ถ้าทราบ)" basis="220">
-            <TextInput placeholder="เช่น ฝูงงาดำ" value={data.observation.herd.herdName} onChange={(e) => setHerd({ ...data.observation.herd, herdName: e.target.value })} />
+            <TextInput placeholder="เช่น งาดำ" value={data.observation.herd.herdName} onChange={(e) => setHerd({ ...data.observation.herd, herdName: e.target.value })} />
           </Field>
           <Field label="จำนวนจริง" basis="160" info="จำนวนช้างป่าที่เจ้าหน้าที่สามารถนับได้จริงจากการพบเห็นโดยตรง">
             <TextInput type="number" min="0" step="1" inputMode="numeric" placeholder="0" value={data.observation.herd.countActual} onChange={(e) => setHerd({ ...data.observation.herd, countActual: e.target.value.replace(/[^0-9]/g, "") })} />
@@ -1819,13 +1819,13 @@ async function submitReport() {
                       </Field>
                       {elephant.hasHerd && (
                         <Field label="ชื่อฝูง" info="ควรระบุให้ชัดเจน หากเว้นว่างไว้ ข้อมูลฝูงของช้างตัวนี้จะไม่สามารถเชื่อมโยงกับฝูงที่เคยรายงานไว้ก่อนหน้าได้" basis="220">
-                          <TextInput placeholder="เช่น ฝูงแม่ยาย" value={elephant.herdName} onChange={(e) => updateElephant(elephant.id, { herdName: e.target.value })} />
+                          <TextInput placeholder="เช่น แม่ยาย" value={elephant.herdName} onChange={(e) => updateElephant(elephant.id, { herdName: e.target.value })} />
                         </Field>
                       )}
                     </>
                   )}
                   <Field label="หมายเหตุ / ตำหนิ" basis="100%">
-                    <TextArea placeholder="เช่น หูซ้ายแหว่ง งาซ้ายหัก มีปลอกคอ GPS" value={elephant.remark} onChange={(e) => updateElephant(elephant.id, { remark: e.target.value })} />
+                    <TextArea placeholder="เช่น หูซ้ายแหว่ง งาซ้ายหัก มีปลอกคอ GPS หรือพฤติกรรม เส้นทาง" value={elephant.remark} onChange={(e) => updateElephant(elephant.id, { remark: e.target.value })} />
                   </Field>
                   {!isHerd && (
                     <Field label="แนบภาพ" basis="100%">
