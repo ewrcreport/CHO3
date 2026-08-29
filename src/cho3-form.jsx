@@ -429,21 +429,80 @@ function Switch({ checked, onChange }) {
   );
 }
 
+const NAME_PREFIX_MAP = {
+  "น.ส.": "นางสาว", "ด.ช.": "เด็กชาย", "ด.ญ.": "เด็กหญิง",
+};
+const NAME_PREFIX_RE = /^(นางสาว|น\.ส\.|นาง|นาย|เด็กชาย|ด\.ช\.|เด็กหญิง|ด\.ญ\.)\s*/;
+
+/** แยกชื่อเต็มเป็น คำนำหน้า / ชื่อ / นามสกุล
+ *  token แรกคือชื่อ ที่เหลือทั้งหมดคือนามสกุล — รองรับ "สมชาย ณ อยุธยา" */
+function splitThaiName(raw, prefixes) {
+  let rest = String(raw || "").replace(/\s+/g, " ").trim();
+  let prefix = "";
+
+  const m = rest.match(NAME_PREFIX_RE);
+  if (m) {
+    const found = NAME_PREFIX_MAP[m[1]] || m[1];
+    if (prefixes.includes(found)) {
+      prefix = found;
+      rest = rest.slice(m[0].length).trim();
+    }
+  }
+
+  const parts = rest.split(" ").filter(Boolean);
+  return { prefix, first: parts[0] || "", last: parts.slice(1).join(" ") };
+}
+
 function NameRow({ prefix, first, last, onPrefix, onFirst, onLast, prefixes = PREFIXES }) {
+
+  function applyFullName(v) {
+    const p = splitThaiName(v, prefixes);
+    if (p.prefix) onPrefix(p.prefix);
+    onFirst(p.first);
+    if (p.last) onLast(p.last);
+  }
+
+  // แยกทันที เฉพาะตอน autofill หรือวางข้อความ (ค่าเพิ่มขึ้นทีละหลายตัวอักษร)
+  function handleFirstChange(v) {
+    if (/\s/.test(v.trim()) && v.length - String(first || "").length > 1) {
+      applyFullName(v);
+      return;
+    }
+    onFirst(v);
+  }
+
+  // พิมพ์เองทีละตัว ค่อยแยกตอนออกจากช่อง
+  function handleFirstBlur() {
+    const v = String(first || "");
+    if (/\s/.test(v.trim())) applyFullName(v);
+    else if (v !== v.trim()) onFirst(v.trim());
+  }
+
   return (
     <Row gap="0.6rem">
       <div style={{ flex: "1 1 110px", minWidth: 0 }}>
-        <Select value={prefix} onChange={(e) => onPrefix(e.target.value)}>
+        <Select value={prefix} onChange={(e) => onPrefix(e.target.value)} autoComplete="honorific-prefix">
           {prefixes.map((p) => (
             <option key={p} value={p}>{p}</option>
           ))}
         </Select>
       </div>
       <div style={{ flex: "2 1 150px", minWidth: 0 }}>
-        <TextInput placeholder="ชื่อ" value={first} onChange={(e) => onFirst(e.target.value)} />
+        <TextInput
+          placeholder="ชื่อ"
+          autoComplete="given-name"
+          value={first}
+          onChange={(e) => handleFirstChange(e.target.value)}
+          onBlur={handleFirstBlur}
+        />
       </div>
       <div style={{ flex: "2 1 150px", minWidth: 0 }}>
-        <TextInput placeholder="นามสกุล" value={last} onChange={(e) => onLast(e.target.value)} />
+        <TextInput
+          placeholder="นามสกุล"
+          autoComplete="family-name"
+          value={last}
+          onChange={(e) => onLast(e.target.value)}
+        />
       </div>
     </Row>
   );
