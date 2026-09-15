@@ -746,6 +746,7 @@ export default function Cho3Form() {
 const [offices, setOffices] = useState([]);
 
 const [masterLoading, setMasterLoading] = useState(true);
+const [masterFailed, setMasterFailed] = useState([]);
 
 const [forestAreas, setForestAreas] = useState([]);
 
@@ -832,113 +833,48 @@ const jointSuggest = forestAreas.reduce((result, area) => {
   const [rootRef, rootWidth] = useElementWidth();
   const sidebarOnTop = rootWidth > 0 && rootWidth < 900; // sidebar moves to a top bar
   const compactStepper = rootWidth > 0 && rootWidth < 560; // too tight even for a scroll strip — show current step only
-  useEffect(() => {
-
-async function loadMaster() {
-
-    setMasterLoading(true);
-
-    try {
-
-      const [
-  officeRes,
-  areaRes,
-  patrolRes,
-  activityRes,
-  positionRes,
-  propertyRes,
-  cropRes,
-  observationRes,
-  officerRes,
-  elephantRes,
-  provinceRes,
-  districtRes,
-  subdistrictRes,
-] = await Promise.all([
-
-        fetch(API + "?action=office"),
-        fetch(API + "?action=forestArea"),
-        fetch(API + "?action=patrol"),
-        fetch(API + "?action=activity"),
-        fetch(API + "?action=position"),
-        fetch(API + "?action=property"),
-        fetch(API + "?action=crop"),
-        fetch(API + "?action=observationType"),
-        fetch(API + "?action=officer"),
-        fetch(API + "?action=elephant"),
-        fetch(API + "?action=province"),
-fetch(API + "?action=district"),
-fetch(API + "?action=subdistrict"),
-
-      ]);
-
-      const officeData = await officeRes.json();
-      console.log("Office :", officeData);
-      setOffices(officeData);
-
-      const areaData = await areaRes.json();
-      console.log("ForestArea :", areaData);
-      setForestAreas(areaData);
-
-      const patrolData = await patrolRes.json();
-      console.log("PatrolSet :", patrolData);
-      setPatrolSets(patrolData);
-
-      const activityData = await activityRes.json();
-      console.log("Activity :", activityData);
-      setActivities(activityData.data);
-
-      const positionData = await positionRes.json();
-      console.log("Position :", positionData);
-      setPositions(positionData);
-
-      const propertyData = await propertyRes.json();
-      console.log("Property :", propertyData);
-      setProperties(propertyData);
-
-      const cropData = await cropRes.json();
-      console.log("Crop :", cropData);
-      setCrops(cropData);
-
-      const observationData = await observationRes.json();
-      console.log("ObservationType :", observationData);
-      setObservationTypes(observationData);
-
-      const officerData = await officerRes.json();
-      console.log("Officer :", officerData);
-      setOfficers(officerData);
-
-      const elephantData = await elephantRes.json();
-      console.log("Elephant :", elephantData);
-      setElephants(elephantData);
-
-      const provinceData = await provinceRes.json();
-      console.log("Province :", provinceData);
-      setProvinces(provinceData);
-
-      const districtData = await districtRes.json();
-      console.log("District :", districtData);
-      setDistricts(districtData);
-
-      const subdistrictData = await subdistrictRes.json();
-      console.log("Subdistrict :", subdistrictData);
-      setSubdistricts(subdistrictData);
-
-} catch (err) {
-
-      console.error(err);
-
-    } finally {
-
-      setMasterLoading(false);
-
-    }
-
+async function loadOne(action, apply){
+  try {
+    const res = await fetch(API + "?action=" + action);
+    if(!res.ok){ throw new Error("HTTP " + res.status); }
+    apply(await res.json());
+    return null;
+  } catch (e) {
+    console.error("โหลด " + action + " ไม่สำเร็จ", e);
+    return action;
   }
+}
 
-  loadMaster();
+async function loadMaster(){
 
-}, []);
+  setMasterLoading(true);
+
+  const jobs = [
+    ["office",          function(d){ setOffices(d); }],
+    ["forestArea",      function(d){ setForestAreas(d); }],
+    ["patrol",          function(d){ setPatrolSets(d); }],
+    ["activity",        function(d){ setActivities(d.data); }],
+    ["position",        function(d){ setPositions(d); }],
+    ["property",        function(d){ setProperties(d); }],
+    ["crop",            function(d){ setCrops(d); }],
+    ["observationType", function(d){ setObservationTypes(d); }],
+    ["officer",         function(d){ setOfficers(d); }],
+    ["elephant",        function(d){ setElephants(d); }],
+    ["province",        function(d){ setProvinces(d); }],
+    ["district",        function(d){ setDistricts(d); }],
+    ["subdistrict",     function(d){ setSubdistricts(d); }],
+  ];
+
+  const results = await Promise.all(
+    jobs.map(function(j){ return loadOne(j[0], j[1]); })
+  );
+
+  setMasterFailed(results.filter(Boolean));
+  setMasterLoading(false);
+
+}
+
+useEffect(() => { loadMaster(); }, []);
   const stepRefs = useRef([]);
 
   useEffect(() => {
@@ -1010,6 +946,27 @@ fetch(API + "?action=subdistrict"),
 };
 
 function isStepValid(n) {
+
+  if (n === 4) {
+
+    if (data.method === "gps") {
+      return Boolean(data.geo && data.geo.lat && data.geo.lon);
+    }
+
+    if (data.method === "manual") {
+      return Boolean(
+        selectedProvince &&
+        selectedDistrict &&
+        selectedSubdistrict &&
+        data.utmZone &&
+        data.coord1 &&
+        data.coord2
+      );
+    }
+
+    return false;
+  }
+
   if (n === 5) {
     return Boolean(data.observation.seeForm) && Boolean(data.observation.encounterType);
   }
@@ -1097,6 +1054,10 @@ const subdistrictOptions = selectedDistrict
       (s) => s.districtId === selectedDistrict.districtId
     )
   : [];
+
+const selectedSubdistrict = subdistrictOptions.find(
+  (s) => s.subdistrictName === data.subdistrict
+);
 
 function buildPayload() {
 
@@ -1200,7 +1161,9 @@ async function submitReport() {
   setSubmitting(true);
 
   const MAX_ATTEMPTS = 4;
-  const PER_ATTEMPT_TIMEOUT_MS = 90000;
+  // ต้องยาวกว่า lock 5 นาทีของ saveIncident ไม่งั้นฟอร์มจะ abort
+  // ทั้งที่เซิร์ฟเวอร์บันทึกสำเร็จแล้ว แล้วยิงซ้ำจนได้ข้อมูลซ้ำในฐาน
+  const PER_ATTEMPT_TIMEOUT_MS = 310000;
 
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
     setSubmitAttempt(attempt);
@@ -1613,7 +1576,24 @@ async function submitReport() {
           </section>
         )}
 
+
         {/* STEP 4 */}
+        {!masterLoading && masterFailed.length > 0 && (
+    <div className="mt-4 mb-4 rounded-lg border-2 border-rose-300 bg-rose-50 p-4">
+    <p className="text-sm font-semibold text-rose-700 mb-1">โหลดรายการบางส่วนไม่สำเร็จ</p>
+    <p className="text-sm text-rose-700 mb-2">
+      รายชื่อจังหวัด อำเภอ หรือตำบลอาจยังไม่ครบ กดโหลดใหม่ก่อนกรอก
+    </p>
+    <button
+      type="button"
+      onClick={loadMaster}
+      className="rounded-md bg-rose-600 px-4 py-1.5 text-sm font-semibold text-white"
+    >
+      โหลดใหม่
+    </button>
+  </div>
+)}
+
         {step === 4 && (
           <section>
             <SectionHeader num={4} title="ระบุตำแหน่งบริเวณที่ปฏิบัติงาน" desc="เลือกวิธีระบุพิกัด — ใช้ตำแหน่งปัจจุบันจากอุปกรณ์ หรือกรอกพิกัดเอง" />
@@ -1653,61 +1633,91 @@ async function submitReport() {
               ) : (
                <div className="space-y-5">
   <Row>
-    <Field label="จังหวัด" basis="180">
+    <Field label="จังหวัด" required basis="180">
       <AutocompleteInput
-  value={data.province}
-  items={provinces.map((p) => ({
-    name: p.provinceName,
-  }))}
-  placeholder="ค้นหาจังหวัด..."
-  onChange={(value) =>
-    setData((d) => ({
-      ...d,
-      province: value,
-      district: "",
-      subdistrict: "",
-    }))
-  }
-/>
+        value={data.province}
+        items={provinces.map((p) => ({
+          name: p.provinceName,
+        }))}
+        placeholder="ค้นหาจังหวัด..."
+        onChange={(value) =>
+          setData((d) => ({
+            ...d,
+            province: value,
+            district: "",
+            subdistrict: "",
+          }))
+        }
+      />
+      {data.province && !selectedProvince && (
+        <p className="text-xs mt-1.5 text-rose-600">ไม่พบจังหวัดชื่อนี้ — ตรวจตัวสะกด หรือเลือกชื่อที่ระบบแนะนำ</p>
+      )}
+      {!masterLoading && provinces.length === 0 && (
+        <p className="text-xs mt-1.5 text-rose-600">รายชื่อจังหวัดยังโหลดไม่ขึ้น กดปุ่มโหลดใหม่ด้านบน</p>
+      )}
     </Field>
-    <Field label="อำเภอ" basis="180" info="รายชื่ออำเภอจะกรองให้อัตโนมัติตามจังหวัดที่เลือกไว้ด้านซ้าย ถ้ายังไม่เลือกจังหวัด จะยังไม่มีตัวเลือกให้ขึ้น">
+    <Field label="อำเภอ" required basis="180" info="รายชื่ออำเภอจะกรองให้อัตโนมัติตามจังหวัดที่เลือกไว้ด้านซ้าย ถ้ายังไม่เลือกจังหวัด จะยังไม่มีตัวเลือกให้ขึ้น">
       <AutocompleteInput
-  value={data.district}
-  items={districtOptions.map((d) => ({
-    name: d.districtName,
-  }))}
-  placeholder={
-    selectedProvince
-      ? "ค้นหาอำเภอ..."
-      : "เลือกจังหวัดก่อน..."
-  }
-  onChange={(value) =>
-    setData((d) => ({
-      ...d,
-      district: value,
-      subdistrict: "",
-    }))
-  }
-/>
+        value={data.district}
+        items={districtOptions.map((d) => ({
+          name: d.districtName,
+        }))}
+        placeholder={
+          selectedProvince
+            ? "ค้นหาอำเภอ..."
+            : "เลือกจังหวัดก่อน..."
+        }
+        onChange={(value) =>
+          setData((d) => ({
+            ...d,
+            district: value,
+            subdistrict: "",
+          }))
+        }
+      />
+      {data.district && !selectedProvince && (
+        <p className="text-xs mt-1.5 text-rose-600">เลือกจังหวัดก่อน แล้วรายชื่ออำเภอจะขึ้นให้เลือก</p>
+      )}
+      {!masterLoading && selectedProvince && districtOptions.length === 0 && (
+        <p className="text-xs mt-1.5 text-rose-600">รายชื่ออำเภอยังโหลดไม่ขึ้น กดปุ่มโหลดใหม่ด้านบน</p>
+      )}
+      {data.district && selectedProvince && districtOptions.length > 0 && !selectedDistrict && (
+        <p className="text-xs mt-1.5 text-rose-600">ไม่พบอำเภอชื่อนี้ใน{data.province} — ตรวจตัวสะกด หรือเลือกชื่อที่ระบบแนะนำ</p>
+      )}
     </Field>
-    <Field label="ตำบล" basis="180" info="รายชื่อตำบลจะกรองให้อัตโนมัติตามอำเภอที่เลือกไว้ด้านซ้าย ถ้ายังไม่เลือกอำเภอ จะยังไม่มีตัวเลือกให้ขึ้น">
+    <Field label="ตำบล" required basis="180" info="รายชื่อตำบลจะกรองให้อัตโนมัติตามอำเภอที่เลือกไว้ด้านซ้าย ถ้ายังไม่เลือกอำเภอ จะยังไม่มีตัวเลือกให้ขึ้น">
       <AutocompleteInput
-  value={data.subdistrict}
-  items={subdistrictOptions.map((s) => ({
-    name: s.subdistrictName,
-  }))}
-  placeholder={
-    selectedDistrict
-      ? "ค้นหาตำบล..."
-      : "เลือกอำเภอก่อน..."
-  }
-  onChange={(value) =>
-    set("subdistrict", value)
-  }
-/>
+        value={data.subdistrict}
+        items={subdistrictOptions.map((s) => ({
+          name: s.subdistrictName,
+        }))}
+        placeholder={
+          selectedDistrict
+            ? "ค้นหาตำบล..."
+            : "เลือกอำเภอก่อน..."
+        }
+        onChange={(value) =>
+          setData((d) => ({
+            ...d,
+            subdistrict: value,
+          }))
+        }
+      />
+      {data.subdistrict && !selectedProvince && (
+        <p className="text-xs mt-1.5 text-rose-600">เลือกจังหวัดก่อน แล้วค่อยเลือกอำเภอและตำบล</p>
+      )}
+      {data.subdistrict && selectedProvince && !selectedDistrict && (
+        <p className="text-xs mt-1.5 text-rose-600">เลือกอำเภอก่อน แล้วรายชื่อตำบลจะขึ้นให้เลือก</p>
+      )}
+      {!masterLoading && selectedDistrict && subdistrictOptions.length === 0 && (
+        <p className="text-xs mt-1.5 text-rose-600">รายชื่อตำบลยังโหลดไม่ขึ้น กดปุ่มโหลดใหม่ด้านบน</p>
+      )}
+      {data.subdistrict && selectedDistrict && subdistrictOptions.length > 0 && !selectedSubdistrict && (
+        <p className="text-xs mt-1.5 text-rose-600">ไม่พบตำบลชื่อนี้ใน{data.district} — ตรวจตัวสะกด หรือเลือกชื่อที่ระบบแนะนำ</p>
+      )}
     </Field>
   </Row>
-  <Field label="โซน UTM">
+  <Field label="โซน UTM" required>
     <Row gap="0.6rem">
       <div style={{ flex: "1 1 100px" }}>
         <Choice name="utmZone" checked={data.utmZone === "47N"} onChange={() => set("utmZone", "47N")}>47N</Choice>
@@ -1718,7 +1728,7 @@ async function submitReport() {
     </Row>
   </Field>
   <Row>
-    <Field label="UTM X" basis="200">
+    <Field label="UTM X" required basis="200">
       <TextInput
         placeholder="เช่น 712345"
         value={data.coord1}
@@ -1741,7 +1751,7 @@ async function submitReport() {
         </p>
       )}
     </Field>
-    <Field label="UTM Y" basis="200">
+    <Field label="UTM Y" required basis="200">
       <TextInput
         placeholder="เช่น 1583210"
         value={data.coord2}
