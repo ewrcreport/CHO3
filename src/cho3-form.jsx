@@ -1081,11 +1081,13 @@ function buildPayload() {
   );
 
   const district = districts.find(
-    d => d.districtName === data.district
+    d => d.districtName === data.district &&
+         String(d.provinceId) === String(province?.provinceId)
   );
 
   const subdistrict = subdistricts.find(
-    s => s.subdistrictName === data.subdistrict
+    s => s.subdistrictName === data.subdistrict &&
+         String(s.districtId) === String(district?.districtId)
   );
 
   const recorderArea = forestAreas.find(
